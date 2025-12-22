@@ -22,14 +22,45 @@ st.set_page_config(
 st.markdown(
     """
     <style>
+    /* ---------- GLOBAL TEXT FIX ---------- */
+    html, body, [class*="css"]  {
+        color: #222 !important;
+    }
+
     /* App background */
     .stApp {
         background-color: #f8f9fa;
     }
 
     /* Headings */
-    h1, h2, h3, h4, h5 {
-        color: #222;
+    h1, h2, h3, h4, h5, h6 {
+        color: #111 !important;
+    }
+
+    /* Paragraphs & markdown */
+    p, span, div, li {
+        color: #222 !important;
+    }
+
+    /* Metrics */
+    div[data-testid="metric-container"] {
+        background-color: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    div[data-testid="metric-container"] * {
+        color: #222 !important;
+    }
+
+    /* Sidebar */
+    section[data-testid="stSidebar"] * {
+        color: #fff !important;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #1f2933;
     }
 
     /* Buttons */
@@ -41,7 +72,6 @@ st.markdown(
         color: white !important;
         font-weight: bold;
         border: none;
-        transition: 0.3s;
     }
 
     .stButton>button:hover {
@@ -49,7 +79,16 @@ st.markdown(
         transform: scale(1.02);
     }
 
-    /* Book card */
+    /* Selectbox & radio FIX */
+    div[data-baseweb="select"] * {
+        color: #222 !important;
+    }
+
+    div[data-baseweb="radio"] * {
+        color: #222 !important;
+    }
+
+    /* Book cards */
     .book-card {
         background-color: white;
         padding: 20px;
@@ -57,28 +96,12 @@ st.markdown(
         box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         margin-bottom: 15px;
         border-left: 6px solid #FF9900;
-        color: #222;
+        color: #222 !important;
     }
 
     .rating-text {
-        color: #FF9900;
-        font-size: 1.1rem;
+        color: #FF9900 !important;
         font-weight: 700;
-    }
-
-    /* FIX: dropdowns & radio text */
-    div[data-baseweb="select"] * {
-        color: white !important;
-    }
-
-    div[data-baseweb="radio"] * {
-        color: white !important;
-    }
-
-    /* Labels */
-    label {
-        color: #222 !important;
-        font-weight: 600;
     }
 
     /* Footer */
@@ -88,7 +111,7 @@ st.markdown(
         bottom: 0;
         width: 100%;
         background-color: #f1f1f1;
-        color: #555;
+        color: #444 !important;
         text-align: center;
         padding: 8px;
         font-size: 14px;
@@ -102,6 +125,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 # ---------------------------------
@@ -217,13 +241,4 @@ else:
             recs = df[df["Cluster"] == cluster_id].sort_values("Final_Rating", ascending=False).head(6)
             display_recs(recs)
 
-# ---------------------------------
-# Footer
-# ---------------------------------
-st.markdown("---")
-st.markdown("""
-    <div style="text-align: center; padding: 10px;">
-        <p style="color: #666 !important;">📌 <b>Audible Insights Recommendation System</b></p>
-        <p style="color: #FF9900 !important; font-weight: bold;">Built by Hari Prasad</p>
-    </div>
-""", unsafe_allow_html=True)
+
