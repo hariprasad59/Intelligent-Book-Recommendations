@@ -8,7 +8,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 # ---------------------------------
-# Page Config & Custom Styling
+# Page Config
 # ---------------------------------
 st.set_page_config(
     page_title="Audible Insights",
@@ -16,94 +16,110 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for a modern look
+# ---------------------------------
+# Complete CSS (Fixes Visibility & Styling)
+# ---------------------------------
 st.markdown("""
     <style>
-    /* Main background color */
+    /* 1. GLOBAL PAGE STYLING */
     .stApp {
-        background-color: #f8f9fa;
+        background-color: #f8f9fa !important;
+    }
+
+    /* 2. FORCE TEXT VISIBILITY */
+    h1, h2, h3, h4, h5, h6, p, span, label, li {
+        color: #1a1a1a !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* 3. DASHBOARD METRICS */
+    [data-testid="stMetricValue"] {
+        color: #FF9900 !important;
+        font-weight: 800 !important;
     }
     
-    /* Style the buttons */
+    [data-testid="stMetricLabel"] {
+        color: #4b4b4b !important;
+    }
+
+    /* 4. SIDEBAR STYLING */
+    section[data-testid="stSidebar"] {
+        background-color: #111111 !important;
+    }
+    
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label {
+        color: #ffffff !important;
+    }
+
+    /* 5. CUSTOM RECOMMENDATION CARDS */
+    .book-card {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 15px;
+        border-left: 8px solid #FF9900;
+        transition: transform 0.2s ease;
+    }
+    
+    .book-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+
+    .rating-text {
+        color: #FF9900 !important;
+        font-size: 1.1rem;
+        font-weight: bold;
+    }
+
+    /* 6. BUTTON STYLING */
     .stButton>button {
         width: 100%;
-        border-radius: 10px;
-        height: 3em;
-        background-color: #FF9900;
-        color: white;
+        border-radius: 8px;
+        background-color: #FF9900 !important;
+        color: white !important;
         font-weight: bold;
-        border: none;
-        transition: 0.3s;
+        border: none !important;
+        height: 3em;
     }
     
     .stButton>button:hover {
-        background-color: #e68a00;
-        border: none;
-        color: white;
-        transform: scale(1.02);
-    }
-
-    /* Modern Card UI for books */
-    .book-card {
-        background-color: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        margin-bottom: 15px;
-        border-left: 6px solid #FF9900;
-    }
-    
-    .rating-text {
-        color: #FF9900;
-        font-size: 1.1rem;
-        font-weight: 700;
+        background-color: #e68a00 !important;
     }
     </style>
-    """
-             """
-    <style>
-    .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        background-color: #f9f9f9;
-        color: #555;
-        text-align: center;
-        padding: 8px;
-        font-size: 14px;
-        border-top: 1px solid #e0e0e0;
-    }
-    </style>
-
-    <div class="footer">
-        🔊 Built by <b>Hari Prasad</b>
-    </div>
-    """, unsafe_allow_html=True) # <-- Fixed the keyword here
+    """, unsafe_allow_html=True)
 
 # ---------------------------------
-# Load Data (Cached)
+# Load Data (Relative Path for Cloud)
 # ---------------------------------
 @st.cache_data
 def load_data():
-    # Replace with your actual path
-    df = pd.read_csv("audible_with_clusters.csv")
-    
-    # Pre-cleaning for display
-    def extract_genres(text):
-        if pd.isna(text): return []
-        text = text.lower()
-        text = re.sub(r"#\d+.*?(,|$)", "", text)
-        parts = text.split(",")
-        return [p.strip().title() for p in parts if len(p.strip()) > 3 and "audible" not in p.lower()]
-    
-    df["Clean_Genres"] = df["Ranks and Genre"].apply(extract_genres)
-    return df
+    file_path = "audible_with_clusters.csv"
+    try:
+        df = pd.read_csv(file_path)
+        
+        # Clean Genres
+        def extract_genres(text):
+            if pd.isna(text): return []
+            text = text.lower()
+            text = re.sub(r"#\d+.*?(,|$)", "", text)
+            parts = text.split(",")
+            return [p.strip().title() for p in parts if len(p.strip()) > 3 and "audible" not in p.lower()]
+        
+        df["Clean_Genres"] = df["Ranks and Genre"].apply(extract_genres)
+        return df
+    except FileNotFoundError:
+        st.error(f"File '{file_path}' not found. Please ensure it is uploaded to GitHub.")
+        st.stop()
 
 df = load_data()
 
 # ---------------------------------
-# TF-IDF Logic
+# TF-IDF & Logic
 # ---------------------------------
 @st.cache_resource
 def build_tfidf(desc):
@@ -114,17 +130,10 @@ def build_tfidf(desc):
 
 cosine_sim = build_tfidf(df["Description"])
 
-# ---------------------------------
-# Helper UI Function
-# ---------------------------------
-def display_recommendations(recs):
-    if recs.empty:
-        st.info("No books found matching your criteria.")
-        return
-    
-    # Create columns for a grid layout
-    for _, row in recs.iterrows():
-        with st.container():
+def display_recs(recs):
+    cols = st.columns(2)
+    for i, (_, row) in enumerate(recs.iterrows()):
+        with cols[i % 2]:
             st.markdown(f"""
                 <div class="book-card">
                     <h4>📖 {row['Book Name']}</h4>
@@ -134,29 +143,21 @@ def display_recommendations(recs):
             """, unsafe_allow_html=True)
 
 # ---------------------------------
-# Sidebar & Header
+# Sidebar Navigation
 # ---------------------------------
 with st.sidebar:
+    st.image("https://upload.wikimedia.org/wikipedia/commons/a/a5/Audible_logo.png", width=150)
+    st.markdown("---")
     st.title("Menu")
-    mode = st.radio(
-        "Navigation",
-        ["🏠 Home & Stats", "🔍 Recommendations"]
-    )
-    
-    if mode == "🔍 Recommendations":
-        st.divider()
-        rec_type = st.selectbox(
-            "Strategy",
-            ["Genre-Based", "Similar to a Book", "Clustered Discovery"]
-        )
+    mode = st.radio("Navigation", ["🏠 Home & Stats", "🔍 Recommendations"])
 
 # ---------------------------------
-# Home Page / EDA
+# Main Content
 # ---------------------------------
 if mode == "🏠 Home & Stats":
     st.title("🎧 Audible Insights Dashboard")
     
-    # Top Metrics
+    # Metrics Row
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Total Books", len(df))
     m2.metric("Avg Rating", round(df["Final_Rating"].mean(), 2))
@@ -165,53 +166,53 @@ if mode == "🏠 Home & Stats":
 
     st.markdown("---")
     
-    col1, col2 = st.columns([1, 1])
-    
+    col1, col2 = st.columns(2)
     with col1:
         st.subheader("📊 Rating Distribution")
-        fig, ax = plt.subplots(figsize=(8, 4))
+        fig, ax = plt.subplots()
         sns.histplot(df["Final_Rating"], bins=15, kde=True, color="#FF9900")
-        ax.set_frame_on(False)
         st.pyplot(fig)
 
     with col2:
         st.subheader("🏆 Top Performing Genres")
         genres_series = df["Clean_Genres"].explode().value_counts().head(10)
-        fig, ax = plt.subplots(figsize=(8, 4))
+        fig, ax = plt.subplots()
         sns.barplot(x=genres_series.values, y=genres_series.index, palette="Oranges_r")
         st.pyplot(fig)
 
-# ---------------------------------
-# Recommendation Engine UI
-# ---------------------------------
 else:
-    st.title("🔍 Find Your Next Listen")
+    st.title("🔍 Recommendation Engine")
+    rec_type = st.selectbox("Choose Strategy", ["Genre-Based", "Content-Based (Similar Books)", "Cluster-Based"])
     
     if rec_type == "Genre-Based":
         genre_list = sorted(list(set(df["Clean_Genres"].explode().dropna())))
-        selected_genre = st.selectbox("Pick a Category", genre_list)
-        
-        if st.button("Generate Recommendations"):
+        selected_genre = st.selectbox("Select Genre", genre_list)
+        if st.button("Recommend"):
             filtered = df[df["Clean_Genres"].apply(lambda x: selected_genre in x)]
-            recs = filtered.sort_values(["Final_Rating", "Final_Reviews"], ascending=False).head(5)
-            display_recommendations(recs)
+            recs = filtered.sort_values(["Final_Rating", "Final_Reviews"], ascending=False).head(6)
+            display_recs(recs)
 
-    elif rec_type == "Similar to a Book":
-        book_input = st.selectbox("Select a book you liked", df["Book Name"].unique())
-        
-        if st.button("Find Similar Matches"):
+    elif rec_type == "Content-Based (Similar Books)":
+        book_input = st.selectbox("Select a book", df["Book Name"].unique())
+        if st.button("Find Similar"):
             idx = df[df["Book Name"] == book_input].index[0]
-            sim_scores = sorted(list(enumerate(cosine_sim[idx])), key=lambda x: x[1], reverse=True)[1:6]
-            indices = [i[0] for i in sim_scores]
-            display_recommendations(df.iloc[indices])
+            sim_scores = sorted(list(enumerate(cosine_sim[idx])), key=lambda x: x[1], reverse=True)[1:7]
+            display_recs(df.iloc[[i[0] for i in sim_scores]])
 
     else:
-        book_input = st.selectbox("Select a book to find its 'Vibe' cluster", df["Book Name"].unique())
-        
-        if st.button("Explore Cluster"):
+        book_input = st.selectbox("Select a book", df["Book Name"].unique())
+        if st.button("Find in Cluster"):
             cluster_id = df[df["Book Name"] == book_input]["Cluster"].values[0]
-            recs = df[df["Cluster"] == cluster_id].sort_values("Final_Rating", ascending=False).head(5)
-            display_recommendations(recs)
+            recs = df[df["Cluster"] == cluster_id].sort_values("Final_Rating", ascending=False).head(6)
+            display_recs(recs)
 
-
-st.markdown("<br><hr><center>Built with ❤️ for Book Lovers</center>", unsafe_allow_html=True)
+# ---------------------------------
+# Footer
+# ---------------------------------
+st.markdown("---")
+st.markdown("""
+    <div style="text-align: center; padding: 10px;">
+        <p style="color: #666 !important;">📌 <b>Audible Insights Recommendation System</b></p>
+        <p style="color: #FF9900 !important; font-weight: bold;">Built by Hari Prasad</p>
+    </div>
+""", unsafe_allow_html=True)
