@@ -87,7 +87,7 @@ st.markdown("""
 @st.cache_data
 def load_data():
     # Replace with your actual path
-    df = pd.read_csv(r"F:\python Proj\Projects\BookRecommendationSystem\audible_with_clusters.csv")
+    df = pd.read_csv("audible_with_clusters.csv")
     
     # Pre-cleaning for display
     def extract_genres(text):
@@ -212,5 +212,6 @@ else:
             cluster_id = df[df["Book Name"] == book_input]["Cluster"].values[0]
             recs = df[df["Cluster"] == cluster_id].sort_values("Final_Rating", ascending=False).head(5)
             display_recommendations(recs)
+
 
 st.markdown("<br><hr><center>Built with ❤️ for Book Lovers</center>", unsafe_allow_html=True)
