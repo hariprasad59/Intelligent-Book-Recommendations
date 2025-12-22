@@ -181,7 +181,6 @@ def display_recs(recs):
 # Sidebar Navigation
 # ---------------------------------
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/a/a5/Audible_logo.png", width=150)
     st.markdown("---")
     st.title("Menu")
     mode = st.radio("Navigation", ["🏠 Home & Stats", "🔍 Recommendations"])
@@ -240,5 +239,6 @@ else:
             cluster_id = df[df["Book Name"] == book_input]["Cluster"].values[0]
             recs = df[df["Cluster"] == cluster_id].sort_values("Final_Rating", ascending=False).head(6)
             display_recs(recs)
+
 
 
